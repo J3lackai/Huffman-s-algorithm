@@ -2,6 +2,7 @@ using namespace std;
 #include <iostream>
 #include <queue>
 #include <unordered_map>
+#include <fstream>
 
 // Структура узла дерева Хаффмана
 struct Node
@@ -43,7 +44,7 @@ Node *buildHuffmanTree(string text)
 {
     if (text.length() == 0)
     {
-        cout << "Error: Text == ''";
+        cout << "Error: text.txt is empty";
         exit(1);
     }
     unordered_map<char, int> freqCount;
@@ -128,6 +129,11 @@ bool checkbool(string text)
 // Декодирование текста с помощью дерева Хаффмана
 string decode(string encodedText, unordered_map<char, string> codes)
 {
+    if (encodedText.length() == 0)
+    {
+        cout << "Error: encodedtext.txt is empty";
+        exit(1);
+    }
     if (!checkbool(encodedText))
     {
         cout << "ERROR: the encodedText must contain only '1' or '0'";
@@ -161,27 +167,41 @@ int main()
 {
     unordered_map<char, string> codes; // таблица Хаффмана
     Node *root = 0;
-    string text = "";
     bool flag = 0;
-    cout << "Enter your text: ";
-    cin >> text;
+
     cout << "Choose Decode or Encode (Enter 0 or 1): ";
     cin >> flag;
     if (flag)
     {
+        ifstream in("text.txt");
+        if (!in.is_open())
+        {
+            cout << "ERROR: file 'text.txt' not found create it \n";
+            return 1;
+        }
+        string text;
+        while (getline(in, text));
+        in.close();
         root = buildHuffmanTree(text); // root - корень
         generateCodes(root, "", codes);
         string encodedText = encode(text, codes);
+        ofstream write("encodedtext.txt");
+        write << encodedText;
+        write.close();
         cout << "Encoded text: " << encodedText << endl;
         DestroyTree(root);
     }
     else
     {
-        if (!checkbool(text))
+        ifstream in("encodedtext.txt");
+        if (!in.is_open())
         {
-            cout << "ERROR: the encodedText must contain only '1' or '0'";
+            cout << "ERROR: file 'encodedtext.txt' not found create it \n";
             return 1;
         }
+        string encodedText;
+        while (getline(in, encodedText));
+        in.close();
         char sym;
         string code = "";
         int num = 0;
@@ -198,7 +218,10 @@ int main()
             cin >> sym >> code;
             codes[sym] = code;
         }
-        string decodedText = decode(text, codes);
+        string decodedText = decode(encodedText, codes);
+        ofstream write("text.txt");
+        write << decodedText;
+        write.close();
         cout << "Decoded text: " << decodedText << endl;
     }
     return 0;
