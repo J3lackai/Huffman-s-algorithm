@@ -4,13 +4,13 @@ using namespace std;
 #include <unordered_map>
 #include <fstream>
 
-// РЎС‚СЂСѓРєС‚СѓСЂР° СѓР·Р»Р° РґРµСЂРµРІР° РҐР°С„С„РјР°РЅР°
+// Структура узла дерева Хаффмана
 struct Node
 {
-    char data;   // РЎРёРјРІРѕР»
-    int freq;    // Р§Р°СЃС‚РѕС‚Р° СЃРёРјРІРѕР»Р°
-    Node *left;  // Р»РµРІС‹Р№ РїРѕС‚РѕРјРѕРє
-    Node *right; // РїСЂР°РІС‹Р№ РїРѕС‚РѕРјРѕРє
+    char data;   // Символ
+    int freq;    // Частота символа
+    Node *left;  // левый потомок
+    Node *right; // правый потомок
 
     Node(char data, int freq)
     {
@@ -19,7 +19,7 @@ struct Node
         left = right = nullptr;
     }
 };
-void DestroyTree(Node *node) // С„СѓРЅРєС†РёСЏ РґР»СЏ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ РїР°РјСЏС‚Рё РІС‹РґРµР»РµРЅРЅРѕР№ РїРѕРґ РґРµСЂРµРІРѕ
+void DestroyTree(Node *node) // функция для освобождения памяти выделенной под дерево
 {
     if (node)
     {
@@ -31,7 +31,7 @@ void DestroyTree(Node *node) // С„СѓРЅРєС†РёСЏ РґР»СЏ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ Р
     }
     return;
 }
-// РЎСЂР°РІРЅРµРЅРёРµ РґРІСѓС… СѓР·Р»РѕРІ РїРѕ С‡Р°СЃС‚РѕС‚Рµ
+// Сравнение двух узлов по частоте
 struct compare
 {
     bool operator()(Node *left, Node *right)
@@ -39,7 +39,7 @@ struct compare
         return left->freq > right->freq;
     }
 };
-// РџРѕСЃС‚СЂРѕРµРЅРёРµ РґРµСЂРµРІР° РҐР°С„С„РјР°РЅР°
+// Построение дерева Хаффмана
 Node *buildHuffmanTree(string text)
 {
     if (text.length() == 0)
@@ -48,21 +48,21 @@ Node *buildHuffmanTree(string text)
         exit(1);
     }
     unordered_map<char, int> freqCount;
-    // РџРѕРґСЃС‡РµС‚ С‡Р°СЃС‚РѕС‚С‹ РІСЃС‚СЂРµС‡Р°РµРјРѕСЃС‚Рё СЃРёРјРІРѕР»РѕРІ РІ С‚РµРєСЃС‚Рµ
-    for (char c : text) // СЃР»РµРІР° РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ СЌР»РµРјРµРЅС‚РѕРј РєРѕРЅС‚РµР№РЅРµСЂР°, СЃРїСЂР°РІР° РєРѕРЅС‚РµР№РЅРµСЂ.
+    // Подсчет частоты встречаемости символов в тексте
+    for (char c : text) // слева идентификатор для работы с элементом контейнера, справа контейнер.
     {
         freqCount[c]++;
     }
-    priority_queue<Node *, vector<Node *>, compare> pq; //`vector` РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ РєР°С‡РµСЃС‚РІРµ РєРѕРЅС‚РµР№РЅРµСЂР° РґР»СЏ С…СЂР°РЅРµРЅРёСЏ СЌР»РµРјРµРЅС‚РѕРІ РїСЂРёРѕСЂРёС‚РµС‚РЅРѕР№ РѕС‡РµСЂРµРґРё.
-    // РѕРЅ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ РґРёРЅР°РјРёС‡РµСЃРєРёР№ РјР°СЃСЃРёРІ СЌР»РµРјРµРЅС‚РѕРІ, РїРѕР·РІРѕР»СЏСЏ СѓРІРµР»РёС‡РёРІР°С‚СЊ Рё СѓРјРµРЅСЊС€Р°С‚СЊ РµРіРѕ СЂР°Р·РјРµСЂ РїРѕ РјРµСЂРµ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё.
-    // compare РїРѕР·РІРѕР»СЏРµС‚ РѕРїСЂРµРґРµР»СЏС‚СЊ РїСЂРёРѕСЂРёС‚РµС‚ РїСЂРё РґРѕР±Р°РІР»РµРЅРёРё РІ РѕС‡РµСЂРµРґСЊ
+    priority_queue<Node *, vector<Node *>, compare> pq; //`vector` используется в качестве контейнера для хранения элементов приоритетной очереди.
+    // он предоставляет динамический массив элементов, позволяя увеличивать и уменьшать его размер по мере необходимости.
+    // compare позволяет определять приоритет при добавлении в очередь
     for (auto pair : freqCount)
     {
-        pq.push(new Node(pair.first, pair.second)); // РІС‹РґРµР»СЏРµРј РїР°РјСЏС‚СЊ РґР»СЏ СѓР·Р»Р° РґРµСЂРµРІР° Рё РґРѕР±Р°РІР»СЏРµРј СЌС‚РѕС‚ СѓР·РµР» РІ РѕС‡РµСЂРµРґСЊ
+        pq.push(new Node(pair.first, pair.second)); // выделяем память для узла дерева и добавляем этот узел в очередь
     }
 
-    // РЎС‚СЂРѕРёРј РґРµСЂРµРІРѕ РѕР±СЉРµРґРёРЅСЏСЏ РґРІР° СѓР·Р»Р° СЃ РЅР°РёРјРµРЅСЊС€РµР№ С‡Р°СЃС‚РѕС‚РѕР№ Рё РїРѕРјРµС‰Р°СЏ РЅРѕРІС‹Р№ СѓР·РµР» РІ РѕС‡РµСЂРµРґСЊ
-    // 1) С‚РѕС‚ СЃР»СѓС‡Р°Р№ РєРѕРіРґР° РІ С‚РµРєСЃС‚ СЃРѕСЃС‚РѕРёРЅ РёР· РѕРґРЅРѕРіРѕ Рё С‚РѕРіРѕ Р¶Рµ СЃРёРјРІРѕР»Р° (РїСЂРёРј: aaaaaaaaaaaaaaaaaaaaa)
+    // Строим дерево объединяя два узла с наименьшей частотой и помещая новый узел в очередь
+    // 1) тот случай когда в текст состоин из одного и того же символа (прим: aaaaaaaaaaaaaaaaaaaaa)
     if (freqCount[pq.top()->data] == text.length())
     {
         Node *left = pq.top();
@@ -70,8 +70,8 @@ Node *buildHuffmanTree(string text)
         newNode->left = left;
         return newNode;
     }
-    // 2) РѕР±С‰РёР№ СЃР»СѓС‡Р°Р№
-    while (pq.size() != 1) // РѕС‡РµСЂРµРґСЊ СѓРјРµРЅСЊС€Р°РµС‚СЃСЏ, РґРµСЂРµРІРѕ СѓРІРµР»РёС‡РёРІР°РµС‚СЃСЏ
+    // 2) общий случай
+    while (pq.size() != 1) // очередь уменьшается, дерево увеличивается
     {
         Node *left = pq.top();
         pq.pop();
@@ -87,29 +87,28 @@ Node *buildHuffmanTree(string text)
     return pq.top();
 }
 
-// Р“РµРЅРµСЂР°С†РёСЏ РєРѕРґРѕРІ РҐР°С„С„РјР°РЅР°
-void generateCodes(Node *root, string path, unordered_map<char, string> &codes) // codes - СЌС‚Рѕ С…СЌС€-С‚Р°Р±Р»РёС†Р° РІ РєРѕС‚РѕСЂРѕР№ РєР»СЋС‡ СЌС‚Рѕ СЃРёРјРІРѕР», Р° Р·РЅР°С‡РµРЅРёРµ РµРіРѕ РєРѕРґРёСЂРѕРІРєР° Р°Р»РіРѕСЂРёС‚РјРѕРј РҐР°С„С„РјР°РЅР°
+// Генерация кодов Хаффмана
+void generateCodes(Node *root, string path, unordered_map<char, string> &codes) // codes - это хэш-таблица в которой ключ это символ, а значение его кодировка алгоритмом Хаффмана
 {
-    if (root == nullptr) // СЃР»СѓС‡Р°Р№ РєРѕРіРґР° РґРѕС€Р»Рё РґРѕ Р»РёСЃС‚Р° РґРµСЂРµРІР°
+    if (root == nullptr)
     {
         return;
     }
-    if (!root->left && !root->right)
+    if (!root->left && !root->right) // случай когда дошли до листа дерева
     {
-        codes[root->data] = path; // Р·Р°РїРѕРјРёРЅР°РµРј РїСѓС‚СЊ РІ С‚Р°Р±Р»РёС†Сѓ РҐР°С„С„РјР°РЅР°
+        codes[root->data] = path; // записываем коды Хаффмана
     }
 
-    generateCodes(root->left, path + "0", codes); // СЂРµРєСѓСЂСЃРёРІРЅРѕ СЃРїСѓСЃРєР°РµРјСЃСЏ РїРѕ РґРµСЂРµРІСѓ РѕС‚ РєРѕСЂРЅСЏ Рє Р»РёСЃС‚СЊСЏРј
+    generateCodes(root->left, path + "0", codes); // рекурсивно спускаемся по дереву от корня к листьям
     generateCodes(root->right, path + "1", codes);
 }
-
-// РљРѕРґРёСЂРѕРІР°РЅРёРµ С‚РµРєСЃС‚Р° СЃ РїРѕРјРѕС‰СЊСЋ С‚Р°Р±Р»РёС†С‹ РҐР°С„С„РјР°РЅР°
+// Кодирование текста с помощью таблицы Хаффмана
 string encode(string text, unordered_map<char, string> codes)
 {
     string encodedText = "";
 
-    for (char c : text) // РїСЂРѕС…РѕРґРёРј РїРѕ РІСЃРµР№ С…СЌС€-С‚Р°Р±Р»РёС†Рµ(С‚Р°Р±Р»РёС†Рµ РҐР°С„С„РјР°РЅР°), РґРѕСЃС‚Р°С‘Рј РІСЃРµ Р·РЅР°С‡РµРЅРёСЏ РїРѕ РєР»СЋС‡Р°Рј
-    // Рё РєРѕРЅРєР°С‚РµРЅРёСЂСѓРµРј РёС… СЃ С†РµР»СЊСЋ РїРѕР»СѓС‡РёС‚СЊ РєРѕРЅРµС‡РЅС‹Р№ Р·Р°РєРѕРґРёСЂРѕРІР°РЅРЅС‹Р№ С‚РµРєСЃС‚
+    for (char c : text) // проходим по всей хэш-таблице(таблице Хаффмана), достаём все значения по ключам
+    // и конкатенируем их с целью получить конечный закодированный текст
     {
         encodedText += codes[c];
     }
@@ -126,7 +125,7 @@ bool checkbool(string text)
         return true;
     return false;
 }
-// Р”РµРєРѕРґРёСЂРѕРІР°РЅРёРµ С‚РµРєСЃС‚Р° СЃ РїРѕРјРѕС‰СЊСЋ РґРµСЂРµРІР° РҐР°С„С„РјР°РЅР°
+// Декодирование текста с помощью дерева Хаффмана
 string decode(string encodedText, unordered_map<char, string> codes)
 {
     if (encodedText.length() == 0)
@@ -154,21 +153,21 @@ string decode(string encodedText, unordered_map<char, string> codes)
             {
                 decodedText += pair.first;
                 i += j;
-                flag = true; // РѕС‚СЃР»РµР¶РёРІР°РµРј С„Р»Р°Рі С‡С‚РѕР±С‹ РёР·Р±РµР¶Р°С‚СЊ Р·Р°С†РёРєР»РёРІР°РЅРёСЏ РїСЂРё РЅРµРІРµСЂРЅРѕ РІРІРµРґС‘РЅРЅС‹С… РґР°РЅРЅС‹С…
+                flag = true; // отслеживаем флаг чтобы избежать зацикливания при неверно введённых данных
                 break;
             }
         }
     }
     if (!flag)
-        cout << "ERROR: incorrect input data\n";
+        cout << "ERROR: incorrect input data in HuffmanTree\n";
     return decodedText;
 }
 int main()
 {
-    unordered_map<char, string> codes; // С‚Р°Р±Р»РёС†Р° РҐР°С„С„РјР°РЅР°
+    unordered_map<char, string> codes; // таблица Хаффмана
     Node *root = 0;
+    string line ="";
     bool flag = 0;
-
     cout << "Choose Decode or Encode (Enter 0 or 1): ";
     cin >> flag;
     if (flag)
@@ -179,50 +178,68 @@ int main()
             cout << "ERROR: file 'text.txt' not found create it \n";
             return 1;
         }
-        string text;
-        while (getline(in, text));
-        in.close();
-        root = buildHuffmanTree(text); // root - РєРѕСЂРµРЅСЊ
-        generateCodes(root, "", codes);
-        string encodedText = encode(text, codes);
+        ofstream HufTree("HuffmanTree.txt");
         ofstream write("encodedtext.txt");
+        string text;
+        while (getline(in, line))
+        {
+            text += line;
+        } 
+        root = buildHuffmanTree(text); // создаём на его основе дерево
+        generateCodes(root, "", codes);
+
+        for (const auto &pair : codes)
+        {
+            HufTree << pair.first << " " << pair.second << endl; // для возможности раскодировать мы запоминаем пары вида "символ" -"код" в файл
+        }
+        string encodedText = encode(text, codes);
         write << encodedText;
-        write.close();
         cout << "Encoded text: " << encodedText << endl;
-        DestroyTree(root);
+        DestroyTree(root); // освобождаем память потому что выделена она динамически
+        write.close();
+        in.close();
+        HufTree.close();
     }
     else
     {
         ifstream in("encodedtext.txt");
+        ifstream HufTree("HuffmanTree.txt");
+        ofstream write("text.txt");
         if (!in.is_open())
         {
             cout << "ERROR: file 'encodedtext.txt' not found create it \n";
             return 1;
         }
-        string encodedText;
-        while (getline(in, encodedText));
-        in.close();
-        char sym;
-        string code = "";
-        int num = 0;
-        cout << "Enter num of different sym: ";
-        cin >> num;
-        if (num < 1)
+        if (!HufTree.is_open())
         {
-            cout << "ERROR: num of sym < 1";
+            cout << "ERROR: file 'HuffmanTree.txt' not found create it \n";
             return 1;
         }
-        for (size_t i = 0; i < num; i++)
+        char sym = ' ';
+        string path = "";
+        string encodedText;
+        while (getline(in, line))
         {
-            cout << "Enter the symbol and its code through backspace: "; // Р’РІРѕРґ СЃРёРјРІРѕР»РѕРІ Рё РёС… С‡Р°СЃС‚РѕС‚ С‡С‚РѕР±С‹ РїРѕСЃС‚СЂРѕРёС‚СЊ РґРµСЂРµРІРѕ РґР»СЏ РґРµРєРѕРґРёСЂРѕРІР°РЅРёСЏ С‚РµРєСЃС‚Р°
-            cin >> sym >> code;
-            codes[sym] = code;
+            encodedText += line;
         }
+        line = "";
+        while (getline(HufTree, line))// извлекаем из файла символы и соответсвующие им коды
+        {
+            sym = line[0];
+            path = "";
+            for (size_t i = 2; line[i]; i++)
+            {
+                path += line[i];
+            }
+            codes[sym] = path;
+        }
+
         string decodedText = decode(encodedText, codes);
-        ofstream write("text.txt");
         write << decodedText;
-        write.close();
         cout << "Decoded text: " << decodedText << endl;
+        in.close();
+        HufTree.close();
+        write.close();
     }
     return 0;
 }
