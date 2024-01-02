@@ -1,7 +1,6 @@
 using namespace std;
 #include <iostream>
 #include <queue>
-#include <map>
 #include <unordered_map>
 #include <fstream>
 
@@ -63,8 +62,8 @@ Node *buildHuffmanTree(string text)
     }
 
     // Строим дерево объединяя два узла с наименьшей частотой и помещая новый узел в очередь
-    // 1) тот случай когда текст состоин из одного и того же символа (прим: aaaaaaaaaaaaaaaaaaaaa)
-    if (pq.size() == 1)
+    // 1) тот случай когда в текст состоин из одного и того же символа (прим: aaaaaaaaaaaaaaaaaaaaa)
+    if (freqCount[pq.top()->data] == text.length())
     {
         Node *left = pq.top();
         Node *newNode = new Node('\0', left->freq);
@@ -92,9 +91,13 @@ Node *buildHuffmanTree(string text)
 void generateCodes(Node *root, string path, unordered_map<char, string> &codes) // codes - это хэш-таблица в которой ключ это символ, а значение его кодировка алгоритмом Хаффмана
 {
     if (root == nullptr)
+    {
         return;
+    }
     if (!root->left && !root->right) // случай когда дошли до листа дерева
-        codes[root->data] = path;    // записываем коды Хаффмана
+    {
+        codes[root->data] = path; // записываем коды Хаффмана
+    }
 
     generateCodes(root->left, path + "0", codes); // рекурсивно спускаемся по дереву от корня к листьям
     generateCodes(root->right, path + "1", codes);
@@ -104,9 +107,23 @@ string encode(string text, unordered_map<char, string> codes)
 {
     string encodedText = "";
 
-    for (char c : text)          // проходим по всей хэш-таблице(таблице Хаффмана), достаём все значения по ключам
-        encodedText += codes[c]; // и конкатенируем их с целью получить конечный закодированный текст
+    for (char c : text) // проходим по всей хэш-таблице(таблице Хаффмана), достаём все значения по ключам
+    // и конкатенируем их с целью получить конечный закодированный текст
+    {
+        encodedText += codes[c];
+    }
+
     return encodedText;
+}
+
+bool checkbool(string text)
+{
+    int i = 0;
+    for (; i < text.length() && (text[i] == '0' || text[i] == '1'); i++)
+        ;
+    if (i == text.length())
+        return true;
+    return false;
 }
 // Декодирование текста с помощью дерева Хаффмана
 string decode(string encodedText, unordered_map<char, string> codes)
@@ -116,18 +133,23 @@ string decode(string encodedText, unordered_map<char, string> codes)
         cout << "Error: encodedtext.txt is empty";
         exit(1);
     }
+    if (!checkbool(encodedText))
+    {
+        cout << "ERROR: the encodedText must contain only '1' or '0'";
+        exit(1);
+    }
     string decodedText = "";
     int i = 0;
     int j = 0;
     bool flag = true;
-    for (i = 0; i < encodedText.length() && flag;) // просматриваем закодированный текст
+    for (i = 0; i < encodedText.length() && flag;)
     {
         flag = false;
-        for (const auto &pair : codes) // просматриваем таблицу Хаффмана
+        for (const auto &pair : codes)
         {
             for (j = 0; j < pair.second.length() && encodedText[i + j] == pair.second[j]; j++)
                 ;
-            if (j == pair.second.length()) // код из таблицы Хафф. совпал с частью закодированного текста, значит мы раскодировали символ который соответствует этому коду
+            if (j == pair.second.length())
             {
                 decodedText += pair.first;
                 i += j;
@@ -137,14 +159,15 @@ string decode(string encodedText, unordered_map<char, string> codes)
         }
     }
     if (!flag)
-        cout << "ERROR: incorrect input data in HuffmanTree.txt or in encodedtext.txt\n";
+        cout << "ERROR: incorrect input data in HuffmanTree\n";
     return decodedText;
 }
 int main()
-{
+{   
+
     unordered_map<char, string> codes; // таблица Хаффмана
     Node *root = 0;
-    string line = "";
+    string line ="";
     bool flag = 0;
     cout << "Choose Decode or Encode (Enter 0 or 1): ";
     cin >> flag;
@@ -162,7 +185,7 @@ int main()
         while (getline(in, line))
         {
             text += line;
-        }
+        } 
         root = buildHuffmanTree(text); // создаём на его основе дерево
         generateCodes(root, "", codes);
 
@@ -196,14 +219,12 @@ int main()
         char sym = ' ';
         string path = "";
         string encodedText;
-        // считываем из файла построчно закодированный текст
         while (getline(in, line))
         {
             encodedText += line;
         }
         line = "";
-        // воспроизводим таблицу Хаффмана из файла
-        while (getline(HufTree, line))
+        while (getline(HufTree, line))// извлекаем из файла символы и соответсвующие им коды
         {
             sym = line[0];
             path = "";
@@ -215,8 +236,8 @@ int main()
         }
 
         string decodedText = decode(encodedText, codes);
-        write << decodedText;                            // записали результат в файл text.txt
-        cout << "Decoded text: " << decodedText << endl; // вывели результат
+        write << decodedText;
+        cout << "Decoded text: " << decodedText << endl;
         in.close();
         HufTree.close();
         write.close();
