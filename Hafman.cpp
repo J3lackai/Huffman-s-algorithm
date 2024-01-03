@@ -62,7 +62,7 @@ Node *buildHuffmanTree(string text)
     }
 
     // Строим дерево объединяя два узла с наименьшей частотой и помещая новый узел в очередь
-    // 1) тот случай когда в текст состоин из одного и того же символа (прим: aaaaaaaaaaaaaaaaaaaaa)
+    // 1) тот случай когда текст состоит из одного и того же символа (прим: aaaaaaaaaaaaaaaaaaaaa)
     if (freqCount[pq.top()->data] == text.length())
     {
         Node *left = pq.top();
