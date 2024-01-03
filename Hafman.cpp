@@ -99,7 +99,7 @@ void generateCodes(Node *root, string path, unordered_map<char, string> &codes) 
     generateCodes(root->right, path + "1", codes);
 }
 // Кодирование текста с помощью таблицы Хаффмана
-string encode(string text, unordered_map<char, string> codes)
+string encode(string text, unordered_map<char, string> &codes)
 {
     string encodedText = "";
 
@@ -108,7 +108,7 @@ string encode(string text, unordered_map<char, string> codes)
     return encodedText;
 }
 // Декодирование текста с помощью дерева Хаффмана
-string decode(string encodedText, unordered_map<char, string> codes)
+string decode(string encodedText, unordered_map<char, string> &codes)
 {
     if (encodedText.length() == 0)
     {
