@@ -119,8 +119,8 @@ string decode(string encodedText, unordered_map<char, string> &codes)
     int i = 0;
     int j = 0;
     bool flag = true;
-    for (i = 0; i < encodedText.length() && flag;) // просматриваем закодированный текст
-    {
+    for (i = 0; encodedText[i] && encodedText[i]!='@' && flag;) // просматриваем закодированный текст до разделителя
+    {   //отслеживаем encodedText[i] чтобы не возникло зацикливания при неправильно переданных данных в encodeText
         flag = false;
         for (const auto &pair : codes) // просматриваем таблицу Хаффмана
         {
@@ -135,7 +135,7 @@ string decode(string encodedText, unordered_map<char, string> &codes)
             }
         }
     }
-    if (!flag)
+    if (!flag or !encodedText[i])
         cout << "ERROR: incorrect input data in HuffmanTree.txt or in encodedtext.txt\n";
     return decodedText;
 }
@@ -155,7 +155,6 @@ int main()
             cout << "ERROR: file 'text.txt' not found create it \n";
             return 1;
         }
-        ofstream HufTree("HuffmanTree.txt");
         ofstream write("encodedtext.txt");
         string text;
         while (getline(in, line))
@@ -164,60 +163,52 @@ int main()
         }
         root = buildHuffmanTree(text); // создаём на его основе дерево
         generateCodes(root, "", codes);
-
-        for (const auto &pair : codes)
-        {
-            HufTree << pair.first << " " << pair.second << endl; // для возможности раскодировать мы запоминаем пары вида "символ" -"код" в файл
-        }
         string encodedText = encode(text, codes);
         write << encodedText;
+        write << "@\n"; // отступ между закодированным текстом и Деревом Хаффмана
+        for (const auto &pair : codes)
+        {
+            write << pair.first << " " << pair.second << endl; // для возможности раскодировать мы запоминаем пары вида "символ" -"код" в файл
+        }
         cout << "Encoded text: " << encodedText << endl;
         DestroyTree(root); // освобождаем память потому что выделена она динамически
         write.close();
         in.close();
-        HufTree.close();
     }
     else
     {
         ifstream in("encodedtext.txt");
-        ifstream HufTree("HuffmanTree.txt");
         ofstream write("text.txt");
         if (!in.is_open())
         {
             cout << "ERROR: file 'encodedtext.txt' not found create it \n";
             return 1;
         }
-        if (!HufTree.is_open())
-        {
-            cout << "ERROR: file 'HuffmanTree.txt' not found create it \n";
-            return 1;
-        }
         char sym = ' ';
         string path = "";
         string encodedText;
+        bool flag = false;
         // считываем из файла построчно закодированный текст
         while (getline(in, line))
         {
-            encodedText += line;
-        }
-        line = "";
-        // воспроизводим таблицу Хаффмана из файла
-        while (getline(HufTree, line))
-        {
-            sym = line[0];
-            path = "";
-            for (size_t i = 2; line[i]; i++)
-            {
-                path += line[i];
+            if (flag) // воспроизводим таблицу Хаффмана из файла
+            {   
+                sym = line[0];
+                path = "";
+                for (size_t i = 2; line[i]; i++)
+                {
+                    path += line[i];
+                }
+                codes[sym] = path;
             }
-            codes[sym] = path;
+            encodedText += line;
+            if (line[line.length()-1] == '@')//добавленный нами разделитель между закодированным текстом и Деревом Хаффмана
+                flag = true;
         }
-
         string decodedText = decode(encodedText, codes);
         write << decodedText;                            // записали результат в файл text.txt
         cout << "Decoded text: " << decodedText << endl; // вывели результат
         in.close();
-        HufTree.close();
         write.close();
     }
     return 0;
