@@ -1,1 +1,1 @@
-ut <<" sym: " 
+bit_codes[c].len

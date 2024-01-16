@@ -4,7 +4,9 @@ using namespace std;
 #include <unordered_map>
 #include <fstream>
 #include <memory.h>
+#include "HufTree.cpp"
 // Написать булев вектор
+
 struct boolVec
 {
     unsigned char *data; // Закодированный Символ
@@ -45,7 +47,7 @@ unsigned char *CopyVector(unsigned char *vector, size_t bits)
     if (vector)
     {
         size_t bytes = ((bits - 1) / 8) + 1;
-        unsigned char *newVector = (unsigned char *)malloc(sizeof(unsigned char) * bytes);
+        unsigned char *newVector = (unsigned char *)calloc(sizeof(unsigned char), bytes);
         if (newVector)
         {
             for (size_t i = 0; i < bytes; i++)
@@ -62,120 +64,107 @@ void DestroyVec(unordered_map<char, boolVec> &bit_codes) // функция дл�
         free(pair.second.data);
     }
 }
+
 void ShiftRight(unsigned char *vec, size_t bits, size_t k)
 {
-    unsigned char bite1 = 0;
-    unsigned char bite2 = 0;
-    int bytes = ((bits - 1) / 8) + 1;
-    int z = bits % 8;
-    unsigned char m = (1 << k) - 1;
-
-    for (int i = 0; i < bytes; i++)
+    if (vec && k)
     {
-        bite1 = vec[i] & m;
-        vec[i] = vec[i] >> k;
-        vec[i] |= bite2 << (8 - k);
-        bite2 = bite1;
+        int bytes_to_shift = k / 8;
+        int bytes = (bits + 7) / 8;
+
+        // Сдвиг на целые байты
+        if (bytes_to_shift)
+        {
+            for (int i = bytes - 1; i >= 0; --i)
+            {
+                if (i - bytes_to_shift >= 0)
+                {
+                    vec[i] = vec[i - bytes_to_shift];
+                }
+                else
+                {
+                    vec[i] = 0; // Обнуляем начальные байты
+                }
+            }
+        }
+        k %= 8;
+        unsigned char bite1 = 0;
+        unsigned char bite2 = 0;
+        // unsigned char m = (1 << k) - 1;
+
+        for (int i = 0; i < bytes; i++)
+        {
+            bite1 = vec[i];
+            vec[i] = vec[i] >> k;
+            vec[i] |= bite2 << (8 - k);
+            bite2 = bite1;
+        }
     }
 }
 void ShiftLeft(unsigned char *vec, size_t bits, size_t k)
 {
-    unsigned char bite1 = 0;
-    unsigned char bite2 = 0;
-    int bytes = ((bits - 1) / 8) + 1;
-    int z = bits % 8;
-    unsigned char m = (1 << k) - 1;
-    m = m << (8 - k);
-
-    for (int i = bytes - 1; i >= 0; i--)
+    if (vec && k)
     {
-        bite1 = vec[i] & m;
-        vec[i] = vec[i] << k;
-        vec[i] |= bite2 >> (8 - k);
-        bite2 = bite1;
+        int bytes_to_shift = k / 8;
+        int bytes = (bits + 7) / 8;
+
+        // Сдвиг на целые байты
+        if (bytes_to_shift)
+        {
+            for (int i = 0; i < bytes; ++i)
+            {
+                if (i + bytes_to_shift < bytes)
+                {
+                    vec[i] = vec[i + bytes_to_shift];
+                }
+                else
+                {
+                    vec[i] = 0; // Обнуляем конечные байты
+                }
+            }
+        }
+        k %= 8;
+        unsigned char bite1 = 0;
+        unsigned char bite2 = 0;
+        // unsigned char m = 255;//(1 << k) - 1
+        for (int i = bytes - 1; i >= 0; i--)
+        {
+            bite1 = vec[i];
+            vec[i] = vec[i] << k; //
+            vec[i] |= bite2 >> (8 - k);
+            bite2 = bite1;
+        }
     }
 }
 
-// Структура узла дерева Хаффмана
-struct Node
+unsigned char *VecToStr(unsigned char *vec, size_t bits)
 {
-    char data;   // Символ
-    int freq;    // Частота символа
-    Node *left;  // левый потомокd
-    Node *right; // правый потомок
-
-    Node(char data, int freq)
+    if (vec)
     {
-        this->data = data;
-        this->freq = freq;
-        left = right = nullptr;
+        size_t bytes = ((bits - 1) / 8) + 1;                                             // Количество байт
+        unsigned char *str = (unsigned char *)calloc(sizeof(unsigned char), (bits + 1)); // Выделение памяти для строки
+        if (str)
+        {                        // Если указатель не нулевой
+            size_t strIndex = 0; // Индекс для строки
+            for (size_t i = 0; i < bytes; i++)
+            {                                // Проход по ячейкам
+                unsigned char mask = 1 << 7; // Создаем маску, начиная с самого левого бита
+                for (int j = 0; j < 8 && i * 8 + j < bits; j++)
+                {
+                    if ((vec[i] & mask) != 0)
+                        str[strIndex] = '1';
+                    else
+                        str[strIndex] = '0';
+                    mask = mask >> 1;
+                    strIndex++;
+                }
+                mask = 1 << 7;
+            }
+            str[bits] = '\0'; // Добавляем завершающий символ нуля
+            return str;
+        }
     }
-};
-void DestroyTree(Node *node) // функция для освобождения памяти выделенной под дерево
-{
-    if (node)
-    {
-        if (node->left)
-            DestroyTree(node->left);
-        if (node->right)
-            DestroyTree(node->right);
-        delete node;
-    }
-}
-// Сравнение двух узлов по частоте
-struct compare
-{
-    bool operator()(Node *left, Node *right)
-    {
-        return left->freq > right->freq;
-    }
-};
-// Построение дерева Хаффмана
-Node *buildHuffmanTree(string text)
-{
-    if (text.length() == 0)
-    {
-        cout << "Error: text.txt is empty";
-        exit(1);
-    }
-    unordered_map<char, int> freqCount;
-    // Подсчет частоты встречаемости символов в тексте
-    for (char c : text) // слева идентификатор для работы с элементом контейнера, справа контейнер.
-    {
-        freqCount[c]++;
-    }
-    priority_queue<Node *, vector<Node *>, compare> pq; //`vector` используется в качестве контейнера для хранения элементов приоритетной очереди.
-    // он предоставляет динамический массив элементов, позволяя увеличивать и уменьшать его размер по мере необходимости.
-    // compare позволяет определять приоритет при добавлении в очередь
-    for (auto pair : freqCount)
-    {
-        pq.push(new Node(pair.first, pair.second)); // выделяем память для узла дерева и добавляем этот узел в очередь
-    }
-
-    // Строим дерево объединяя два узла с наименьшей частотой и помещая новый узел в очередь
-    // 1) тот случай когда текст состоит из одного и того же символа (прим: aaaaaaaaaaaaaaaaaaaaa)
-    if (pq.size() == 1)
-    {
-        Node *left = pq.top();
-        Node *newNode = new Node('\0', left->freq);
-        newNode->left = left;
-        return newNode;
-    }
-    // 2) общий случай
-    while (pq.size() != 1) // очередь уменьшается, дерево увеличивается
-    {
-        Node *left = pq.top();
-        pq.pop();
-        Node *right = pq.top();
-        pq.pop();
-
-        int sum = left->freq + right->freq;
-        Node *newNode = new Node('\0', sum);
-        newNode->left = left;
-        newNode->right = right;
-        pq.push(newNode);
-    }
-    return pq.top();
+    return NULL;
 }
 unsigned char *StrToVec(string &str)
 {
@@ -186,7 +175,7 @@ unsigned char *StrToVec(string &str)
         if (vec)
         {
             int k = 0;
-            unsigned char mask = 1 << 7;
+            unsigned char mask = 1 << 0;
             // Создаем маску, начиная с самого левого бита
 
             for (int i = 0; i < bytes; i++)
@@ -194,12 +183,12 @@ unsigned char *StrToVec(string &str)
                 for (int j = 0; j < 8 && (k < str.length()); j++)
                 {
                     if (str[k] != '0')
-                        vec[i] = vec[i] | mask;
+                        vec[bytes - i - 1] = vec[bytes - i - 1] | mask;
 
-                    mask = mask >> 1; // Смещаем маску
+                    mask = mask << 1; // Смещаем маску
                     k++;
                 }
-                mask = 1 << 7; // Создаем маску, начиная с самого левого бита; // сбрасываем маску перед переходом к следующему байту
+                mask = 1 << 0; // Создаем маску, начиная с самого левого бита; // сбрасываем маску перед переходом к следующему байту
             }
             return vec;
         }
@@ -224,26 +213,31 @@ unsigned char *encodeText(string &text, unordered_map<char, boolVec> &bit_codes,
     unsigned char *encodedText;
 
     encodedText = (unsigned char *)calloc(sizeof(unsigned char), bytes);
+    char temp;
     if (!encodedText)
         return nullptr;
     for (char c : text) // Упаковываем все биты закодированного текста в один булев вектор
     {
         ShiftLeft(encodedText, bytes * 8, bit_codes[c].len);
+        temp = c;
         for (size_t i = 0; i < ((bit_codes[c].len - 1) / 8 + 1); i++)
         {
             encodedText[bytes - i - 1] = encodedText[bytes - i - 1] | bit_codes[c].data[i];
+            cout << VecToStr(encodedText, bytes * 8) << endl;
         }
+        // cout << "EncodedText: " << VecToStr(encodedText, bytes * 8) << endl;
     }
+    cout << "EncodedText: " << VecToStr(encodedText, bytes * 8) << endl;
     return encodedText;
 }
 // Декодирование текста с помощью дерева Хаффмана
-string decode(unsigned char *encodedText, size_t bytes, unordered_map<char, boolVec> &bit_codes)
+string decode(unsigned char *encodedText, size_t bytes, unordered_map<char, boolVec> &bit_codes, size_t count)
 {
     string decodedText = ""; // end
     bool flag = true;
     if (encodedText)
     {
-        for (size_t k = 0; k < bytes; k++)
+        for (size_t k = 0; k < count; k++)
         {
             for (const auto &pair : bit_codes) // просматриваем таблицу Хаффмана
             {
@@ -251,17 +245,18 @@ string decode(unsigned char *encodedText, size_t bytes, unordered_map<char, bool
                 unsigned char *mask = (unsigned char *)calloc(sizeof(unsigned char), bytesPair);
                 if (!mask)
                 {
-                    decodedText = "ERROR MEMORY";
-                    return decodedText;
+                    cout << "ERROR MEMORY\n";
+                    return "";
                 }
                 size_t x = 0;
                 for (; x < bytesPair - 1; x++)
                     mask[x] = 1;
-                for (size_t y = 0; y <= (pair.second.len - x * 8 - 1); y++)
+                for (size_t y = 0; y < (pair.second.len - x * 8); y++)
                 {
-                    mask[x] = mask[x] | 1 << y;
+                    mask[x] = mask[x] | (1 << y);
                     // cout << char (mask[x] + 48) << endl;
                 }
+                // cout << z << " mask - " << VecToStr(mask, bytesPair * 8) << endl;
                 for (size_t i = 0; i < bytesPair; i++)
                 {
                     mask[i] = encodedText[bytes - 1 - i] & mask[i];
@@ -270,18 +265,21 @@ string decode(unsigned char *encodedText, size_t bytes, unordered_map<char, bool
                 for (; j < bytesPair && mask[j] == pair.second.data[j]; j++)
                     ;
                 if (j == bytesPair)
-                {
+                {   
                     flag = true;
                     ShiftRight(encodedText, bytes * 8, pair.second.len);
-                    decodedText += pair.first;
+                    cout << endl
+                         << VecToStr(encodedText, bytes * 8) << endl;
+                    decodedText = pair.first + decodedText;
+                    free(mask);
+                    break;
                     // cout << char(mask[j - 1] + 48) << endl; // wrong mask
                 }
-                free(mask);
             }
             if (!flag)
             {
-                cout << "ERROR DECODE";
-                return "";
+                cout << "ERROR DECODE\n";
+                return decodedText;
             }
             flag = false;
         }
@@ -305,7 +303,7 @@ int main()
             cout << "ERROR: file 'text.txt' not found create it \n";
             return 1;
         }
-        ofstream write("encodedtext.txt");
+        ofstream write("encodedtext.bin", ios::binary | ios::out);
         string text;
         while (getline(in, line))
         {
@@ -315,23 +313,27 @@ int main()
         generateCodes(root, "", bit_codes);
         int bits = 0;
         size_t bytes = 0;
+        size_t count = 0;
         for (char c : text)
-        {
+        {      
+            count++;
             bits += bit_codes[c].len;
         }
         bytes = (bits - 1) / 8 + 1;
         cout << "bytes - " << bytes;
         unsigned char *encodedText = encodeText(text, bit_codes, bytes);
+        write << count << "\n";
         for (size_t i = 0; i < bytes; i++)
         {
             write << encodedText[i];
         }
         write << "\n\n"; // отступ между закодированным текстом и Деревом Хаффмана
-        for (const auto &pair : bit_codes)
+        for (auto pair : bit_codes)
         {
-            write << pair.first << " " << pair.second.len << " " << pair.second.data << endl; // для возможности раскодировать мы запоминаем пары вида "символ" -"код" в файл
+            write << pair.first << pair.second.len << pair.second.data << "\n"; // для возможности раскодировать мы запоминаем пары вида "символ" -"код" в файл
+            cout << pair.first << " " << pair.second.len << " " << VecToStr(pair.second.data, 8) << "\n";
         }
-        cout << "Encoded text: " << encodedText << endl;
+        // cout << "Encoded text: " << encodedText << endl;
         DestroyTree(root); // освобождаем память потому что выделена она динамически
         DestroyVec(bit_codes);
         free(encodedText);
@@ -340,7 +342,7 @@ int main()
     }
     else
     {
-        ifstream in("encodedtext.txt");
+        ifstream in("encodedtext.bin", ios::binary | ios::in);
         ofstream write("text.txt");
         if (!in.is_open())
         {
@@ -355,47 +357,48 @@ int main()
         }
         unordered_map<char, boolVec> bit_codes;
         size_t j = 0;
-        char sym = ' ';
-        unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), 1);
         size_t bytes = 0;
         string temp = "";
-        string line = "";
         // считываем из файла построчно закодированный текст
+        string line;
+        getline(in, line);
+        size_t count = line[0] - 48;
         while (getline(in, line)) // ERROR
         {
             if (line.length() == 0)
                 break;
             bytes += line.length();
-            (unsigned char *)realloc(encodedText, bytes);
+            encodedText = (unsigned char *)realloc(encodedText, bytes);
+            if (!encodeText)
+            {
+                cout << "ERROR MEMORY";
+                return 1;
+            }
             for (size_t i = 0; i < line.length(); i++)
             {
-                encodedText[j] = static_cast<unsigned char>(line[i]);
+                encodedText[j] = line[i];
                 j++;
             }
         }
         while (getline(in, line))
         {
-            sym = line[0];
-            int len = line[2] - 48;
-            (unsigned char *)realloc(path, (len - 1) / 8 + 1);
-            size_t i = 4;
+            char sym = line[0];
+            int len = line[1] - 48;
+            unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), (len - 1) / 8 + 1);
+            size_t i = 2;
             for (; line[i]; i++)
             {
-                path[i - 4] = static_cast<unsigned char>(line[i]);
+                path[i - 2] = line[i];
             }
-            i++;
             bit_codes[sym] = boolVec(path, len);
+            //cout << sym << " " << bit_codes[sym].len << " " << VecToStr(bit_codes[sym].data, 8) << "\n";
         }
-        free(path);
-        cout << "EncodedText: " << encodedText;
-        for (auto &pair : bit_codes)
-        {
-            cout << "\n sym: " << pair.first << " len: " << pair.second.len << " code: " << char(pair.second.data[0]) << endl;
-        }
-        string decodedText = decode(encodedText, bytes, bit_codes);
+        unsigned char *vec = VecToStr(encodedText, bytes * 8);
+        cout << "EncodedText: " << vec;
+        string decodedText = decode(encodedText, bytes, bit_codes, count);
         write << decodedText;
         //   записали результат в файл text.txt
-        cout << "Decoded text: " <<decodedText <<endl; // вывели результат
+        cout << "Decoded text: " << decodedText << endl; // вывели результат
         in.close();
         write.close();
     }
