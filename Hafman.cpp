@@ -361,8 +361,9 @@ int main()
         string temp = "";
         // считываем из файла построчно закодированный текст
         string line;
+        size_t count;
+        in >> count;
         getline(in, line);
-        size_t count = line[0] - 48;
         while (getline(in, line)) // ERROR
         {
             if (line.length() == 0)
