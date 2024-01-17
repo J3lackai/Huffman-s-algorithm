@@ -223,7 +223,7 @@ unsigned char *encodeText(string &text, unordered_map<char, boolVec> &bit_codes,
         for (size_t i = 0; i < ((bit_codes[c].len - 1) / 8 + 1); i++)
         {
             encodedText[bytes - i - 1] = encodedText[bytes - i - 1] | bit_codes[c].data[i];
-            cout << VecToStr(encodedText, bytes * 8) << endl;
+            // cout << VecToStr(encodedText, bytes * 8) << endl;
         }
         // cout << "EncodedText: " << VecToStr(encodedText, bytes * 8) << endl;
     }
@@ -265,11 +265,11 @@ string decode(unsigned char *encodedText, size_t bytes, unordered_map<char, bool
                 for (; j < bytesPair && mask[j] == pair.second.data[j]; j++)
                     ;
                 if (j == bytesPair)
-                {   
+                {
                     flag = true;
                     ShiftRight(encodedText, bytes * 8, pair.second.len);
-                    cout << endl
-                         << VecToStr(encodedText, bytes * 8) << endl;
+                    // cout << endl
+                    //      << VecToStr(encodedText, bytes * 8) << endl;
                     decodedText = pair.first + decodedText;
                     free(mask);
                     break;
@@ -278,6 +278,8 @@ string decode(unsigned char *encodedText, size_t bytes, unordered_map<char, bool
             }
             if (!flag)
             {
+                cout << endl
+                     << VecToStr(encodedText, bytes * 8) << endl;
                 cout << "ERROR DECODE\n";
                 return decodedText;
             }
@@ -315,7 +317,7 @@ int main()
         size_t bytes = 0;
         size_t count = 0;
         for (char c : text)
-        {      
+        {
             count++;
             bits += bit_codes[c].len;
         }
@@ -381,10 +383,33 @@ int main()
                 j++;
             }
         }
+        int len = 8;
+        unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), 1);
+        char sym = 10;
         while (getline(in, line))
         {
-            char sym = line[0];
-            int len = line[1] - 48;
+            if (line.length() < 2) // обработка \n char(10)
+            {
+                if (len > 8)
+                {
+                    if (line.length() == 1)
+                    {
+                        path[0] = 10;//     \nsym
+                        path[1] = line[0]; 
+                    }
+                    else
+                    {
+                        path[1] = 10; //    sym\n
+                    }
+                }
+                else
+                    path[0] = 10;     //     \n
+                bit_codes[sym] = boolVec(path, len);
+                cout << sym << " " << bit_codes[sym].len << " " << VecToStr(bit_codes[sym].data, 8) << "\n";
+                continue;
+            }
+            sym = line[0];
+            len = line[1] - 48;
             unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), (len - 1) / 8 + 1);
             size_t i = 2;
             for (; line[i]; i++)
@@ -392,10 +417,10 @@ int main()
                 path[i - 2] = line[i];
             }
             bit_codes[sym] = boolVec(path, len);
-            //cout << sym << " " << bit_codes[sym].len << " " << VecToStr(bit_codes[sym].data, 8) << "\n";
+            cout << sym << " " << bit_codes[sym].len << " " << VecToStr(bit_codes[sym].data, 8) << "\n";
         }
         unsigned char *vec = VecToStr(encodedText, bytes * 8);
-        cout << "EncodedText: " << vec;
+        cout << "EncodedText: " << vec << endl;
         string decodedText = decode(encodedText, bytes, bit_codes, count);
         write << decodedText;
         //   записали результат в файл text.txt
