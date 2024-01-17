@@ -332,8 +332,14 @@ int main()
         write << "\n\n"; // отступ между закодированным текстом и Деревом Хаффмана
         for (auto pair : bit_codes)
         {
-            write << pair.first << pair.second.len << pair.second.data << "\n"; // для возможности раскодировать мы запоминаем пары вида "символ" -"код" в файл
-            cout << pair.first << " " << pair.second.len << " " << VecToStr(pair.second.data, 8) << "\n";
+            write << pair.first << pair.second.len;
+            for (size_t p = 0; p < (pair.second.len-1)/8+1; p++)
+            {
+                write << pair.second.data[p];
+            }
+            write <<endl;
+            // для возможности раскодировать мы запоминаем пары вида "символ" -"код" в файл
+            cout << pair.first << " " << pair.second.len << " " << VecToStr(pair.second.data, 8*((pair.second.len-1)/8+1)) << "\n";
         }
         // cout << "Encoded text: " << encodedText << endl;
         DestroyTree(root); // освобождаем память потому что выделена она динамически
@@ -405,19 +411,19 @@ int main()
                 else
                     path[0] = 10;     //     \n
                 bit_codes[sym] = boolVec(path, len);
-                cout << sym << " " << bit_codes[sym].len << " " << VecToStr(bit_codes[sym].data, 8) << "\n";
+                cout << sym << " " << bit_codes[sym].len << " " << VecToStr(bit_codes[sym].data, 8*((bit_codes[sym].len-1)/8+1)) << "\n";
                 continue;
             }
             sym = line[0];
             len = line[1] - 48;
             unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), (len - 1) / 8 + 1);
             size_t i = 2;
-            for (; line[i]; i++)
+            for (; (i - 2) < ((len-1)/8+1); i++)
             {
                 path[i - 2] = line[i];
             }
             bit_codes[sym] = boolVec(path, len);
-            cout << sym << " " << bit_codes[sym].len << " " << VecToStr(bit_codes[sym].data, 8) << "\n";
+            cout << sym << " " << bit_codes[sym].len << " " << VecToStr(bit_codes[sym].data, 8*((bit_codes[sym].len-1)/8+1)) << "\n";
         }
         unsigned char *vec = VecToStr(encodedText, bytes * 8);
         cout << "EncodedText: " << vec << endl;
