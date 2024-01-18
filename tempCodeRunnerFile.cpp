@@ -1,1 +1,0 @@
-bit_codes[c].len
