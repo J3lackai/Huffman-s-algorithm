@@ -3,7 +3,6 @@ using namespace std;
 #include <queue>
 #include <unordered_map>
 #include <fstream>
-#include <memory.h>
 #include "HufTree.cpp" // дерево Хаффмана
 #include "boolVec.cpp" //для работы с булевыми векторами
 // Генерация кодов Хаффмана
