@@ -1,4 +1,5 @@
 using namespace std;
+#include <unordered_map>
 struct Node
 {
     char data;   // Символ
@@ -79,3 +80,4 @@ Node *buildHuffmanTree(string text)
     }
     return pq.top();
 }
+
