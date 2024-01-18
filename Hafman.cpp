@@ -210,19 +210,16 @@ void generateCodes(Node *root, string path, unordered_map<char, boolVec> &bit_co
 // Кодирование текста с помощью таблицы Хаффмана
 unsigned char *encodeText(string &text, unordered_map<char, boolVec> &bit_codes, size_t bytes)
 {
-    unsigned char *encodedText;
-
-    encodedText = (unsigned char *)calloc(sizeof(unsigned char), bytes);
-    char temp;
+    unsigned char *encodedText = (unsigned char *)calloc(sizeof(unsigned char), bytes);
     if (!encodedText)
         return nullptr;
     for (char c : text) // Упаковываем все биты закодированного текста в один булев вектор
-    {
+    {   
         ShiftLeft(encodedText, bytes * 8, bit_codes[c].len);
-        temp = c;
-        for (size_t i = 0; i < ((bit_codes[c].len - 1) / 8 + 1); i++)
+        size_t bytesPair = (bit_codes[c].len - 1) / 8 + 1;
+        for (size_t i = 0; i < bytesPair; i++)
         {
-            encodedText[bytes - i - 1] = encodedText[bytes - i - 1] | bit_codes[c].data[i];
+            encodedText[bytes - i - 1] = encodedText[bytes - i - 1] | bit_codes[c].data[bytesPair - i - 1];
             // cout << VecToStr(encodedText, bytes * 8) << endl;
         }
         // cout << "EncodedText: " << VecToStr(encodedText, bytes * 8) << endl;
@@ -243,23 +240,24 @@ string decode(unsigned char *encodedText, size_t bytes, unordered_map<char, bool
             {
                 size_t bytesPair = (pair.second.len - 1) / 8 + 1;
                 unsigned char *mask = (unsigned char *)calloc(sizeof(unsigned char), bytesPair);
-                if (!mask)
+                if (!mask) 
                 {
                     cout << "ERROR MEMORY\n";
                     return "";
                 }
                 size_t x = 0;
-                for (; x < bytesPair - 1; x++)
-                    mask[x] = 1;
-                for (size_t y = 0; y < (pair.second.len - x * 8); y++)
+                for (size_t y = 0; y <= (pair.second.len-1)%8; y++)
                 {
                     mask[x] = mask[x] | (1 << y);
                     // cout << char (mask[x] + 48) << endl;
                 }
-                // cout << z << " mask - " << VecToStr(mask, bytesPair * 8) << endl;
+                x++;
+                for (; x < bytesPair; x++)
+                    mask[x] = 255;
+                //cout <<" mask - " << VecToStr(mask, bytesPair * 8) << endl;
                 for (size_t i = 0; i < bytesPair; i++)
                 {
-                    mask[i] = encodedText[bytes - 1 - i] & mask[i];
+                    mask[bytesPair - 1 - i] = encodedText[bytes - 1 - i] & mask[bytesPair - 1 - i];
                 }
                 size_t j = 0;
                 for (; j < bytesPair && mask[j] == pair.second.data[j]; j++)
@@ -332,7 +330,7 @@ int main()
         write << "\n\n"; // отступ между закодированным текстом и Деревом Хаффмана
         for (auto pair : bit_codes)
         {
-            write << pair.first << pair.second.len;
+            write << pair.first << pair.second.len << ' ';
             for (size_t p = 0; p < (pair.second.len-1)/8+1; p++)
             {
                 write << pair.second.data[p];
@@ -389,9 +387,9 @@ int main()
                 j++;
             }
         }
-        int len = 8;
-        unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), 1);
-        char sym = 10;
+        int len;
+        unsigned char *path;
+        char sym;
         while (getline(in, line))
         {
             if (line.length() < 2) // обработка \n char(10)
@@ -415,12 +413,19 @@ int main()
                 continue;
             }
             sym = line[0];
-            len = line[1] - 48;
-            unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), (len - 1) / 8 + 1);
-            size_t i = 2;
-            for (; (i - 2) < ((len-1)/8+1); i++)
+            len = 0;
+            size_t k = 1;
+            for (; line[k]!=' ' && line[k]; k++)
             {
-                path[i - 2] = line[i];
+                len *= 10;
+                len += line[k]-48;
+            }
+            unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), (len - 1) / 8 + 1);
+            k++;
+            size_t i = k;
+            for (; (i - k) < ((len-1)/8+1); i++)
+            {
+                path[i - k] = line[i];
             }
             bit_codes[sym] = boolVec(path, len);
             cout << sym << " " << bit_codes[sym].len << " " << VecToStr(bit_codes[sym].data, 8*((bit_codes[sym].len-1)/8+1)) << "\n";
