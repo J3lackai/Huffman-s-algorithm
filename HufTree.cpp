@@ -1,7 +1,4 @@
 using namespace std;
-#include <iostream>
-#include <queue>
-#include <unordered_map>
 struct Node
 {
     char data;   // Символ
