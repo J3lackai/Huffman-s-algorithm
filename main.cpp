@@ -37,47 +37,46 @@ unsigned char *encodeText(string &text, unordered_map<char, boolVec> &bit_codes,
 string decode(unsigned char *encodedText, size_t bytes, unordered_map<char, boolVec> &bit_codes, size_t count)
 {
     string decodedText = ""; // end
-    if (encodedText)
+    if (!encodedText)
+    {   
+        cout << "ERROR encodedText pointer == NULL";
+        return decodedText;
+    }
+    unsigned char *mask = (unsigned char *)calloc(sizeof(unsigned char), 8);
+    if (!mask)
     {
-        bool flag = true;
-        for (size_t k = 0; k < count; k++)
+        cout << "ERROR MEMORY";
+        return decodedText;
+    }
+    bool flag = true;
+    mask[0] = 1;
+    for (size_t y = 1; y <= 7; y++) // создаём маски под все возможные длины окончаний кодов т.е для (длина_кода) % 8
+        mask[y] = mask[y - 1] | (1 << y);
+
+    for (size_t k = 0; k < count; k++) // декодируем столько символов сколько закодировали
+    {
+        for (const auto &pair : bit_codes) // просматриваем таблицу Хаффмана
         {
-            for (const auto &pair : bit_codes) // просматриваем таблицу Хаффмана
+            size_t bytesPair = (pair.second.len - 1) / 8 + 1;
+            if ((encodedText[bytes - bytesPair] & mask[(pair.second.len - 1) % 8]) != pair.second.data[0]) // сверяем окончания кодов
+                continue;
+            size_t i = 0;
+            for (; i < bytesPair - 1 && ((encodedText[bytes - 1 - i] & 255) == pair.second.data[bytesPair - 1 - i]); i++) // сверяем остальные байты
+                ;
+            if (i == bytesPair - 1)
             {
-                size_t bytesPair = (pair.second.len - 1) / 8 + 1;
-                unsigned char *mask = (unsigned char *)calloc(sizeof(unsigned char), bytesPair);
-                if (!mask)
-                {
-                    cout << "ERROR MEMORY\n";
-                    return "";
-                }
-                size_t x = 0;
-                for (size_t y = 0; y <= (pair.second.len - 1) % 8; y++)
-                    mask[x] = mask[x] | (1 << y);
-                x++;
-                for (; x < bytesPair; x++)
-                    mask[x] = 255;
-                for (size_t i = 0; i < bytesPair; i++)
-                    mask[bytesPair - 1 - i] = encodedText[bytes - 1 - i] & mask[bytesPair - 1 - i];
-                size_t j = 0;
-                for (; j < bytesPair && mask[j] == pair.second.data[j]; j++)
-                    ;
-                free(mask);
-                if (j == bytesPair)
-                {
-                    flag = true;
-                    ShiftRight(encodedText, bytes * 8, pair.second.len);
-                    decodedText = pair.first + decodedText;
-                    break;
-                }
+                flag = true;
+                ShiftRight(encodedText, bytes * 8, pair.second.len);
+                decodedText = pair.first + decodedText;
+                break;
             }
-            if (!flag)
-            {
-                cout << "ERROR DECODE\n";
-                return decodedText;
-            }
-            flag = false;
         }
+        if (!flag)
+        {
+            cout << "ERROR DECODE\n";
+            return decodedText;
+        }
+        flag = false;
     }
     cout << "count: " << count << endl;
     return decodedText;
@@ -185,7 +184,7 @@ int main()
         while (getline(in, line))
         {
             if (line.length() < 2) // обработка \n char(10)
-            { 
+            {
                 if (len > 8)
                 {
                     if (line.length() == 1)
@@ -201,20 +200,20 @@ int main()
                 bit_codes[sym] = boolVec(path, len);
                 continue;
             }
-            sym = line[0];//считываем символ из файла
+            sym = line[0]; // считываем символ из файла
             len = 0;
             size_t k = 1;
             for (; line[k] != ' ' && line[k]; k++)
             {
                 len *= 10;
                 len += line[k] - 48;
-            }//считываем длину кода из файла
+            } // считываем длину кода из файла
             unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), (len - 1) / 8 + 1);
             k++;
             size_t i = k;
             for (; (i - k) < ((len - 1) / 8 + 1); i++)
                 path[i - k] = line[i];
-            bit_codes[sym] = boolVec(path, len);//создаём Хеш-таблицу пар символ - код
+            bit_codes[sym] = boolVec(path, len); // создаём Хеш-таблицу пар символ - код
         }
         string decodedText = decode(encodedText, bytes, bit_codes, count);
         write << decodedText;
